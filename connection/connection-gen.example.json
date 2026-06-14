@@ -1,0 +1,44 @@
+{
+  "name": "fabric-network-general",
+  "version": "1.0.0",
+  "client": {
+    "organization": "General",
+    "connection": {
+      "timeout": {
+        "peer": { "endorser": "300" },
+        "orderer": "300"
+      }
+    }
+  },
+  "organizations": {
+    "General": {
+      "mspid": "GeneralMSP",
+      "peers": ["peer0.general.uae.com"],
+      "certificateAuthorities": ["ca.general.uae.com"]
+    }
+  },
+  "peers": {
+    "peer0.general.uae.com": {
+      "url": "grpcs://peer0.general.uae.com:9051",
+      "tlsCACerts": {
+        "path": "../qchain-network/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.general.uae.com",
+        "hostnameOverride": "peer0.general.uae.com"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca.general.uae.com": {
+      "url": "https://ca.general.uae.com:8054",
+      "caName": "GeneralCA",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\n<paste contents of crypto-material/peerOrganizations/general.uae.com/ca/ca.general.uae.com-cert.pem here>\n-----END CERTIFICATE-----"
+      },
+      "httpOptions": {
+        "verify": false
+      }
+    }
+  }
+}

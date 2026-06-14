@@ -1,0 +1,44 @@
+{
+  "name": "fabric-network-government",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Government",
+    "connection": {
+      "timeout": {
+        "peer": { "endorser": "300" },
+        "orderer": "300"
+      }
+    }
+  },
+  "organizations": {
+    "Government": {
+      "mspid": "GovernmentMSP",
+      "peers": ["peer0.government.uae.com"],
+      "certificateAuthorities": ["ca.government.uae.com"]
+    }
+  },
+  "peers": {
+    "peer0.government.uae.com": {
+      "url": "grpcs://peer0.government.uae.com:7051",
+      "tlsCACerts": {
+        "path": "../qchain-network/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.government.uae.com",
+        "hostnameOverride": "peer0.government.uae.com"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca.government.uae.com": {
+      "url": "https://ca.government.uae.com:7054",
+      "caName": "GovernmentCA",
+      "tlsCACerts": {
+        "pem": "-----BEGIN CERTIFICATE-----\n<paste contents of crypto-material/peerOrganizations/government.uae.com/ca/ca.government.uae.com-cert.pem here>\n-----END CERTIFICATE-----"
+      },
+      "httpOptions": {
+        "verify": false
+      }
+    }
+  }
+}
