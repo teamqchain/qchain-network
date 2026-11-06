@@ -1,5 +1,5 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): teardown of the qchainpqc network. Two separate actions:
+# PQC network (new file, 2026-10-31): teardown of the qchainpqc network. Two separate actions:
 #
 #   teardown-pqc.sh [--yes]
 #       Remove the qchainpqc_* containers, volumes and network ONLY (names must start with qchainpqc_).

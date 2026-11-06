@@ -1,4 +1,4 @@
-# PQC copy (qchain-network-pqc, 2026-10-31). Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - project qchainpqc; every container/volume/network named qchainpqc_*; ports on 127.0.0.1 only,
 #     container port = host port (27050/27053 orderer, 27051 peer0.government, 29051 peer0.general);
 #     operations ports 3xxxx, not published.
@@ -6,9 +6,9 @@
 #   - crypto from crypto-material/ (cryptogen ML-DSA-44, scripts/generate-crypto-pqc.sh), mounted read-only;
 #     node configs from ../config (BCCSP PQC) mounted read-only.
 #   - no docker.sock / CORE_VM_*: chaincode runs as a service (chaincode-qchaincode, ccaas).
-#   - state DB goleveldb; couchdb0 kept as an optional profile ("couchdb"); ipfs behind profile "ipfs";
-#     qchain-server dropped (stale build path, see the source's start-fabric-network.sh).
-#   - uid 1000, read-only root filesystem, tmpfs /tmp mode 1777, restart "no" (as in the proven Docker runs).
+#   - state DB goleveldb, no CouchDB; ipfs behind profile "ipfs"; qchain-server dropped (stale build path).
+#   - uid 1000, read-only root filesystem, tmpfs /tmp mode 1777.
+#   - restart unless-stopped: the containers come back after a Docker or machine restart.
 # Start/stop with scripts/start-fabric-network.sh / stop-fabric-network.sh (docker compose -p qchainpqc).
 name: qchainpqc
 
@@ -172,26 +172,7 @@ services:
       fabric_net:
         aliases: [chaincode-qchaincode]
 
-  # Optional CouchDB state database (not the default; QChaincode.js uses no rich queries). To use it, start
-  # with --profile couchdb and set CORE_LEDGER_STATE_STATEDATABASE=CouchDB plus the
-  # CORE_LEDGER_STATE_COUCHDBCONFIG_* variables on both peers (see README-PQC.md). Not published.
-  couchdb0:
-    image: couchdb:3.3.2
-    container_name: qchainpqc_couchdb0
-    profiles: [couchdb]
-    restart: unless-stopped
-    environment:
-      - COUCHDB_USER=admin
-      - COUCHDB_PASSWORD=adminpw
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://admin:adminpw@localhost:5984/"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    networks:
-      - fabric_net
-
-  # Optional IPFS node (profile "ipfs"); the source normally uses a systemd IPFS daemon instead.
+  # Optional IPFS node (profile "ipfs"); QChain normally uses a systemd IPFS daemon instead.
   ipfs:
     image: ipfs/kubo:latest
     container_name: qchainpqc_ipfs

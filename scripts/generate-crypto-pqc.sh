@@ -1,5 +1,5 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): generate all crypto material at run time (design b1).
+# PQC network (new file, 2026-10-31): generate all crypto material at run time (design b1).
 #   1. PQC cryptogen (ML-DSA-44) -> crypto-material/ for orderer0, peer0 x2, the org admins and the
 #      named control users issuer1@government.uae.com (role=issuer) and plain1@general.uae.com.
 #   2. pqc-keystore/priv_sk copy next to every node/admin MSP (the BCCSP PQC key store; read-only use).

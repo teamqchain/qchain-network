@@ -21,7 +21,7 @@
     "peer0.government.uae.com": {
       "url": "grpcs://peer0.government.uae.com:27051",
       "tlsCACerts": {
-        "path": "../qchain-network-pqc/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls/ca.crt"
+        "path": "../qchain-network/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls/ca.crt"
       },
       "grpcOptions": {
         "ssl-target-name-override": "peer0.government.uae.com",

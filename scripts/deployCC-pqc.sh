@@ -1,5 +1,5 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): deploy QChaincode as a service (ccaas), as in the
+# PQC network (new file, 2026-10-31): deploy QChaincode as a service (ccaas), as in the
 # proven Docker network:
 #   package (connection.json -> chaincode-qchaincode:9998, metadata type ccaas, label qchaincode_2.0);
 #   install on both peers; start qchainpqc_chaincode-qchaincode (image qchain-pqc/ccaas-qchain:2.0, which

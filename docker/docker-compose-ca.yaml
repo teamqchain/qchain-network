@@ -1,4 +1,4 @@
-# PQC copy (qchain-network-pqc, 2026-10-31). Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - image qchain-pqc/fabric-ca-server:e82caf43 (fabric-ca pkcs11,pqc); project qchainpqc, names qchainpqc_*.
 #   - exec-form command (the image has no shell, so `sh -c ...` cannot work); no -b flag: the bootstrap
 #     identity is in the registry of fabric-ca-server-config.yaml (as in the proven Docker CA).

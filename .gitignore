@@ -67,7 +67,7 @@ fabric-ca/*/IssuerPublicKey
 fabric-ca/*/IssuerRevocationPublicKey
 fabric-ca/*/fabric-ca-server.db
 
-# PQC copy (qchain-network-pqc, 2026-10-31): runtime material written by the PQC scripts
+# PQC network (2026-10-31): runtime material written by the PQC scripts
 crypto-material/
 pqc-keystore/
 *.id

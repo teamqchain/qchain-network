@@ -1,6 +1,9 @@
 # CHANGES-PQC.md
 
-The differences between `~/qchain-network` (source, unchanged) and this PQC copy, created 2026-10-31.
+The differences between the classical network (tag `classical-network-final`) and the PQC network.
+
+> **History note.** This file was written on 2026-10-31, when the PQC network was a separate copy in a folder named `qchain-network-pqc`, next to the original `qchain-network`. "This PQC copy", "the source" and the home-folder paths below describe that time. On 2026-11-07 the copy replaced this folder; [the last section](#changes-when-it-replaced-this-folder-2026-11-07) lists what changed then.
+
 The approved plan is in `~/qchain-network-pqc.PLAN.md`. Every edited script and YAML file also carries a short header comment. JSON files can't hold comments, so their changes are listed only here.
 
 Design decisions in force:
@@ -63,3 +66,19 @@ Design decisions in force:
 - `chaincode/` (4 files): identical to the code in `qchain-pqc/ccaas-qchain:2.0`.
 - `channel-artifacts/.gitkeep`.
 - `scripts/setup-demo.sh`, `scripts/setup-ipfs-service.sh`, `scripts/setup-tailscale-funnel.sh`, `scripts/schema.sql`, `scripts/package.json`.
+
+## Changes when it replaced this folder (2026-11-07)
+
+| File | What changed | Why |
+|---|---|---|
+| `docker/docker-compose.yaml`, `docker/docker-compose-ca.yaml` | `restart: "no"` → `unless-stopped` | the network must come back after a Docker or machine restart |
+| `docker/docker-compose.yaml`, `scripts/stop-fabric-network.sh` | optional `couchdb0` service and profile removed | the project keeps goleveldb; CouchDB was never tried with the PQC images |
+| `scripts/enrollAdmin.js`, `scripts/registerUser.js`, `scripts/package.json` | removed | the Node SDK can't make ML-DSA identities; `registerEnroll.sh` and `registerUser-pqc.sh` replace them |
+| `scripts/setup-fabric-autostart.sh` | removed | replaced by the restart policy; its unit never started the chaincode service |
+| `scripts/start-demo.sh` | back to the in-repo version, which starts the backend with `offchain/docker-run.sh`; checks use the `qchainpqc_` names | the backend now mounts this folder, so the reason for the old change is gone |
+| `scripts/pqc-env.sh` | `PQC_BIN` defaults to `~/pqc-tools/bin`, `MKWALLET` to `$PQC_BIN/mkwallet-g1`; the `~/qchain-native` check removed | the tools run from the `qchain-pqc/tools` image |
+| `scripts/qchain-pqc-cli.sh` | `NETWORK_ROOT` defaults to the folder the script is in; marked executable | the symlinks point at this script |
+| `connection/*.example.json` | tlsCACerts path back to `../qchain-network/` | folder name |
+| `offchain/docker-run.sh` | `NETWORK_DIR` defaults to `$REPO_ROOT/qchain-network` | folder name |
+| `README-PQC.md` | rewritten as `README.md` | it described a laptop run with nothing started yet |
+| header comments in scripts and YAML files | "PQC copy" → "PQC network" | there is no separate copy any more |

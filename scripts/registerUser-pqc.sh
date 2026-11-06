@@ -1,7 +1,7 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): PQC replacement for scripts/registerUser.js.
+# PQC network (new file, 2026-10-31): PQC replacement for the classical scripts/registerUser.js.
 # Usage: scripts/registerUser-pqc.sh <firstName> <lastName> <Government|General> <issuer|verifier>
-# Same result as registerUser.js: user <firstName><lastName>, type client, affiliation <org>.<role>,
+# Same result as the classical script: user <firstName><lastName>, type client, affiliation <org>.<role>,
 # ecert attributes firstName/lastName/role, wallet/<org>/<user>.id; but with the PQC fabric-ca-client
 # (ML-DSA-44 key; the Node SDK can only make ECDSA keys) and mkwallet-g1 for the wallet.
 # Needs the org's CA admin enrolled by scripts/registerEnroll.sh. The enrollment secret is random and

@@ -1,6 +1,6 @@
 #!/bin/bash
-# PQC copy (qchain-network-pqc, 2026-10-31) of scripts/registerEnroll.sh, same name, PQC flow (design b1).
-# Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31): scripts/registerEnroll.sh, same name, PQC flow (design b1).
+# Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - PQC fabric-ca-client by explicit path ($PQC_FCC from scripts/pqc-env.sh); the source's
 #     `export PATH=$PATH:~/fabric/build/bin` (stale pre-fix binaries) is gone.
 #   - Clients trust the CA's ECDSA server TLS cert (fabric-ca/<org>/tls/tls-cert.pem) via --tls.certfiles,
@@ -12,14 +12,14 @@
 #     channel MSP written by cryptogen and must not be touched).
 #   - issuer1 / verifier1 at GeneralCA: same registration (role=issuer:ecert / role=verifier:ecert,
 #     --enrollment.attrs role) and enrollment as the source.
-#   - Wallets built with mkwallet-g1 (QChain 6ba0658: picks the key that matches the cert), not with sed.
+#   - Wallets built with mkwallet-g1 (offchain/cmd/mkwallet: picks the key that matches the cert), not with sed.
 # Run after scripts/generate-crypto-pqc.sh and scripts/start-fabric-network.sh (CAs up).
 set -e
 
 NETWORK_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 . "$NETWORK_ROOT/scripts/pqc-env.sh"
 
-# client_cfg <home> <url> <ca tls cert>: PQC client config (doc: ~/fabric-ca/docs/source/pqc-mldsa.md)
+# client_cfg <home> <url> <ca tls cert>: PQC client config (doc: docs/source/pqc-mldsa.md in the Fabric CA fork)
 client_cfg() {
   mkdir -p "$1"
   cat > "$1/fabric-ca-client-config.yaml" <<EOF

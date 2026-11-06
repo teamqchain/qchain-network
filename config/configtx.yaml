@@ -1,4 +1,4 @@
-# PQC copy (qchain-network-pqc, 2026-10-31). Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - Channel capability V3_0 (ML-DSA identities need the V3_0 MSP; Orderer V2_0 / Application V2_5 as proven).
 #   - V3_0 forbids global Orderer.Addresses: the orderer endpoint moved to OrdererOrg.OrdererEndpoints.
 #   - Ports per the PQC port map (container = host): orderer 27050, peer0.government 27051, peer0.general 29051.

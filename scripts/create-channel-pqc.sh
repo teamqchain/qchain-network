@@ -1,5 +1,5 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): create the application channel (channel
+# PQC network (new file, 2026-10-31): create the application channel (channel
 # participation, no system channel) and join both peers.
 #   configtxgen (pqc) -> channel-artifacts/mychannel.block (profile TwoOrgsChannel: Channel V3_0, anchor
 #   peers included); osnadmin join on orderer0 (Admin@orderer TLS client cert); peer channel join as each

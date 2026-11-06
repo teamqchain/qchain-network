@@ -1,27 +1,25 @@
 #!/bin/bash
-# PQC copy (new file, qchain-network-pqc 2026-10-31): shared settings for every PQC script.
+# PQC network (new file, 2026-10-31): shared settings for every PQC script.
 # Source it:  . "$(dirname "$0")/pqc-env.sh"
-# Every Fabric/CA/PQC binary is called by the explicit path below, never from PATH. Override any of them
+# Every Fabric/CA/PQC tool is called by the explicit path below, never from PATH. Override any of them
 # with the environment variable of the same name before sourcing.
 #
-# PREREQUISITE (not done by any script here): build cryptogen and configtxgen from ~/fabric at e472b4ea
-# with -tags pqc into $PQC_BIN, one build at a time, e.g.
-#   cd ~/fabric && GOTOOLCHAIN=go1.27.0 GOFLAGS=-p=1 go build -tags pqc -o ~/pqc-scratch/docker/bin/cryptogen ./cmd/cryptogen
-#   cd ~/fabric && GOTOOLCHAIN=go1.27.0 GOFLAGS=-p=1 go build -tags pqc -o ~/pqc-scratch/docker/bin/configtxgen ./cmd/configtxgen
-# (peer, osnadmin and fabric-ca-client are already there: fabric e472b4ea / fabric-ca e82caf43.)
+# PREREQUISITE (once per machine): install the tool wrappers, which run each CLI from the
+# qchain-pqc/tools image, so the host needs no Fabric binaries:
+#   bash qchain-network/scripts/qchain-pqc-cli.sh install ~/pqc-tools/bin
 
 _PQC_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export NETWORK_ROOT="${NETWORK_ROOT:-$(cd "$_PQC_SCRIPTS/.." && pwd)}"
 
 # --- binaries (explicit paths) ---
-export PQC_BIN="${PQC_BIN:-$HOME/pqc-scratch/docker/bin}"
+export PQC_BIN="${PQC_BIN:-$HOME/pqc-tools/bin}"
 export PQC_PEER="${PQC_PEER:-$PQC_BIN/peer}"
 export PQC_OSNADMIN="${PQC_OSNADMIN:-$PQC_BIN/osnadmin}"
 export PQC_FCC="${PQC_FCC:-$PQC_BIN/fabric-ca-client}"
 export PQC_CRYPTOGEN="${PQC_CRYPTOGEN:-$PQC_BIN/cryptogen}"
 export PQC_CONFIGTXGEN="${PQC_CONFIGTXGEN:-$PQC_BIN/configtxgen}"
-export MKWALLET="${MKWALLET:-$HOME/pqc-scratch/smoke/bin2/mkwallet-g1}"   # QChain 6ba0658 (G1)
-export OPENSSL="${OPENSSL:-/usr/bin/openssl}"                             # OpenSSL 3.5
+export MKWALLET="${MKWALLET:-$PQC_BIN/mkwallet-g1}"   # offchain/cmd/mkwallet
+export OPENSSL="${OPENSSL:-/usr/bin/openssl}"       # ECDSA CA server TLS certs, random user secrets
 export DOCKER="${DOCKER:-/usr/bin/docker}"
 
 # --- compose: project qchainpqc, every object prefixed qchainpqc_ ---
@@ -52,11 +50,10 @@ export GOV_CA_TLS="$NETWORK_ROOT/fabric-ca/government/tls/tls-cert.pem"   # ECDS
 export GEN_CA_TLS="$NETWORK_ROOT/fabric-ca/general/tls/tls-cert.pem"
 
 pqc_die() { echo "ERROR: $*" >&2; exit 1; }
-# pqc_need <binary>...: every binary must exist, be executable, and not come from ~/qchain-native
+# pqc_need <binary>...: every binary must exist and be executable
 pqc_need() {
   local b
   for b in "$@"; do
-    case "$b" in "$HOME"/qchain-native/*) pqc_die "$b is under ~/qchain-native; use the e472b4ea/e82caf43 builds";; esac
     [ -x "$b" ] || pqc_die "missing binary $b (see the PREREQUISITE note in scripts/pqc-env.sh)"
   done
 }

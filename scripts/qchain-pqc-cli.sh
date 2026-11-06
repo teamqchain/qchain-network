@@ -5,15 +5,15 @@
 # Install once (creates <dir>/peer, osnadmin, fabric-ca-client, cryptogen, configtxgen, mkwallet-g1
 # as symlinks to this script):
 #   bash qchain-pqc-cli.sh install ~/pqc-tools/bin
-# Then point the network scripts at it:
-#   export PQC_BIN=~/pqc-tools/bin MKWALLET=~/pqc-tools/bin/mkwallet-g1
+# The network scripts look in ~/pqc-tools/bin by default (scripts/pqc-env.sh). For another folder:
+#   export PQC_BIN=<dir> MKWALLET=<dir>/mkwallet-g1
 #
 # Each call runs `docker run --rm` with:
 #   - the CLI's own name as the command, all arguments passed through unchanged;
 #   - --network host (QCHAIN_TOOLS_NETWORK overrides it; Docker Desktop's host network is its VM,
 #     so locally use qchainpqc_net, where the node aliases and ports match the host addresses);
 #   - your uid:gid, so generated files are owned by you;
-#   - NETWORK_ROOT (default ~/qchain-network-pqc), the current directory and QCHAIN_TOOLS_MOUNTS
+#   - NETWORK_ROOT (default: the network folder this script is in), the current directory and QCHAIN_TOOLS_MOUNTS
 #     (colon-separated) bind-mounted at the same paths, so absolute paths in arguments and in
 #     FABRIC_CFG_PATH / CORE_PEER_* / FABRIC_CA_CLIENT_HOME work as on the host;
 #   - every CORE_*, ORDERER_*, FABRIC_*, OSNADMIN_* variable of the caller.
@@ -41,7 +41,7 @@ if [ "$name" = "$(basename "$self")" ]; then
 fi
 case " $TOOLS " in *" $name "*) ;; *) echo "qchain-pqc-cli: unknown tool $name" >&2; exit 2;; esac
 
-root="${NETWORK_ROOT:-$HOME/qchain-network-pqc}"
+root="${NETWORK_ROOT:-$(dirname "$(dirname "$self")")}"
 mounts=("$root" "$PWD")
 IFS=: read -r -a extra <<< "${QCHAIN_TOOLS_MOUNTS:-}"
 mounts+=("${extra[@]}")

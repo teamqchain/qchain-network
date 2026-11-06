@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# PQC copy (qchain-network-pqc, 2026-10-31). Change vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Change from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   General.BCCSP.Default PQC + PQC.KeyStorePath (the orderer mounts its priv_sk copy there).
 #   Listen/admin/operations addresses, TLS and MSP paths are set by env in docker/docker-compose.yaml.
 
@@ -157,7 +157,7 @@ General:
     #  - PQC: ML-DSA-44 provider of the fabric-lib-go bccsp-pqc fork (-tags pqc builds)
     Default: PQC
 
-    # PQC copy: key store with a copy of the orderer's priv_sk (never written by the orderer).
+    # PQC: key store with a copy of the orderer's priv_sk (never written by the orderer).
     PQC:
       KeyStorePath: /var/hyperledger/orderer/pqc-keystore
 

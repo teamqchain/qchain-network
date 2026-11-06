@@ -1,4 +1,4 @@
-# PQC copy (qchain-network-pqc, 2026-10-31): input for the patched PQC cryptogen (fabric e472b4ea, -tags pqc),
+# PQC network (2026-10-31): input for the patched PQC cryptogen (fabric e472b4ea, -tags pqc),
 # run by scripts/generate-crypto-pqc.sh (design b1: cryptogen ML-DSA-44 material for nodes and admins).
 # Changes vs qchain-network: PublicKeyAlgorithm mldsa44 for every CA, node and user; Users Count 0 plus the
 # named control users of the proven networks (issuer1@government.uae.com with role=issuer in its signing

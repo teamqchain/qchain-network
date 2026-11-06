@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# PQC copy (qchain-network-pqc, 2026-10-31). Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - compose project qchainpqc (-p), docker by explicit path; COMPOSE_IGNORE_ORPHANS because the CA and
 #     node services live in two files of the same project (never use --remove-orphans here).
-#   - 2 PQC CA servers (ca.orderer dropped), orderer, 2 peers; state DB goleveldb (CouchDB only with the
-#     optional "couchdb" profile, see README-PQC.md); the chaincode service is started by deployCC-pqc.sh.
+#   - 2 PQC CA servers (ca.orderer dropped), orderer, 2 peers; state DB goleveldb; the chaincode service is
+#     started by deployCC-pqc.sh.
 #   - refuses to start before scripts/generate-crypto-pqc.sh has written the crypto material (otherwise
 #     Docker would create empty root-owned bind-mount directories).
 #
@@ -11,9 +11,10 @@
 # re-run — docker compose just (re)starts already-existing containers if nothing changed.
 #
 # Deliberately does NOT touch the optional `ipfs` service (compose profile "ipfs"): the systemd IPFS
-# daemon is the one actually in use. The source's stale `qchain-server` service is not in the PQC copy.
+# daemon is the one actually in use.
 #
-# Can be called at boot by the qchainpqc-fabric.service systemd unit (setup-fabric-autostart.sh).
+# After the first start the containers come back by themselves (restart: unless-stopped in both compose
+# files), so a Docker or machine restart needs no script.
 
 set -euo pipefail
 

@@ -1,4 +1,4 @@
-# PQC copy (qchain-network-pqc, 2026-10-31): ML-DSA-44 CA per ~/fabric-ca/docs/source/pqc-mldsa.md.
+# PQC network (2026-10-31): ML-DSA-44 CA per docs/source/pqc-mldsa.md in the Fabric CA fork.
 # Changes vs qchain-network (see CHANGES-PQC.md):
 #   - bccsp.default PQC (upper case; lower case is refused), no bccsp.pqc.password (refused).
 #   - ca.certfile/keyfile = the cryptogen GovernmentMSP CA cert/key (design b1, D7 shortcut), copied into

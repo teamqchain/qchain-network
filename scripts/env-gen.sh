@@ -1,5 +1,5 @@
 #!/bin/bash
-# PQC copy (qchain-network-pqc, 2026-10-31). Changes vs qchain-network (see CHANGES-PQC.md):
+# PQC network (2026-10-31). Changes from the classical network, tag classical-network-final (see CHANGES-PQC.md):
 #   - sources pqc-env.sh; the PQC peer CLI is $PQC_PEER (explicit path), exported as PEER for convenience.
 #   - FABRIC_CFG_PATH = crypto-material/cli-config/admin-general (core.yaml with BCCSP PQC and this
 #     admin's own pqc-keystore, written by generate-crypto-pqc.sh).

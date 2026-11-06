@@ -21,7 +21,7 @@
     "peer0.general.uae.com": {
       "url": "grpcs://peer0.general.uae.com:29051",
       "tlsCACerts": {
-        "path": "../qchain-network-pqc/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/tls/ca.crt"
+        "path": "../qchain-network/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/tls/ca.crt"
       },
       "grpcOptions": {
         "ssl-target-name-override": "peer0.general.uae.com",
