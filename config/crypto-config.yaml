@@ -1,23 +1,46 @@
+# PQC copy (qchain-network-pqc, 2026-10-31): input for the patched PQC cryptogen (fabric e472b4ea, -tags pqc),
+# run by scripts/generate-crypto-pqc.sh (design b1: cryptogen ML-DSA-44 material for nodes and admins).
+# Changes vs qchain-network: PublicKeyAlgorithm mldsa44 for every CA, node and user; Users Count 0 plus the
+# named control users of the proven networks (issuer1@government.uae.com with role=issuer in its signing
+# cert, plain1@general.uae.com without attributes). Application identities (issuer1/verifier1@general, ...)
+# come from the PQC fabric-ca instances (scripts/registerEnroll.sh, registerUser-pqc.sh).
 OrdererOrgs:
   - Name: Orderer
     Domain: orderer.example.com
     EnableNodeOUs: true
+    CA:
+      PublicKeyAlgorithm: mldsa44
     Specs:
       - Hostname: orderer0
+        PublicKeyAlgorithm: mldsa44
 
 PeerOrgs:
   - Name: Government
     Domain: government.uae.com
     EnableNodeOUs: true
+    CA:
+      PublicKeyAlgorithm: mldsa44
     Template:
-      Count: 1              # peer0 and peer1
+      Count: 1              # peer0
+      PublicKeyAlgorithm: mldsa44
     Users:
-      Count: 2              # 2 non-admin users
+      Count: 0              # Admin@ is always generated; app users come from fabric-ca
+      PublicKeyAlgorithm: mldsa44
+      Specs:
+        - Name: issuer1
+          Attrs:
+            role: issuer
 
   - Name: General
     Domain: general.uae.com
     EnableNodeOUs: true
+    CA:
+      PublicKeyAlgorithm: mldsa44
     Template:
-      Count: 1
+      Count: 1              # peer0
+      PublicKeyAlgorithm: mldsa44
     Users:
-      Count: 2
+      Count: 0
+      PublicKeyAlgorithm: mldsa44
+      Specs:
+        - Name: plain1

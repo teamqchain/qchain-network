@@ -1,365 +1,146 @@
 #!/bin/bash
+# PQC copy (qchain-network-pqc, 2026-10-31) of scripts/registerEnroll.sh, same name, PQC flow (design b1).
+# Changes vs qchain-network (see CHANGES-PQC.md):
+#   - PQC fabric-ca-client by explicit path ($PQC_FCC from scripts/pqc-env.sh); the source's
+#     `export PATH=$PATH:~/fabric/build/bin` (stale pre-fix binaries) is gone.
+#   - Clients trust the CA's ECDSA server TLS cert (fabric-ca/<org>/tls/tls-cert.pem) via --tls.certfiles,
+#     not ca-cert.pem; every client home gets a fabric-ca-client-config.yaml with bccsp.default PQC and
+#     csr.keyrequest.algo mldsa44 (ML-DSA-44 keys).
+#   - Node, admin and orderer material is NOT enrolled here any more: it comes from the PQC cryptogen
+#     (scripts/generate-crypto-pqc.sh, design b1). The orderer CA is dropped.
+#   - The CA admin homes are crypto-material/peerOrganizations/<org>/ca-admin (the org msp/ is the
+#     channel MSP written by cryptogen and must not be touched).
+#   - issuer1 / verifier1 at GeneralCA: same registration (role=issuer:ecert / role=verifier:ecert,
+#     --enrollment.attrs role) and enrollment as the source.
+#   - Wallets built with mkwallet-g1 (QChain 6ba0658: picks the key that matches the cert), not with sed.
+# Run after scripts/generate-crypto-pqc.sh and scripts/start-fabric-network.sh (CAs up).
 set -e
 
-NETWORK_ROOT=$(cd "$(dirname "$0")/.." && pwd)
-export PATH=$PATH:~/fabric/build/bin
+NETWORK_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+. "$NETWORK_ROOT/scripts/pqc-env.sh"
+
+# client_cfg <home> <url> <ca tls cert>: PQC client config (doc: ~/fabric-ca/docs/source/pqc-mldsa.md)
+client_cfg() {
+  mkdir -p "$1"
+  cat > "$1/fabric-ca-client-config.yaml" <<EOF
+url: $2
+
+tls:
+  certfiles:
+    - $3
+
+csr:
+  keyrequest:
+    algo: mldsa44
+
+bccsp:
+  default: PQC
+EOF
+}
+
+# nodeous <msp dir>: NodeOUs config.yaml pointing at the CA cert the client stored in cacerts/
+nodeous() {
+  local c; c=$(cd "$1/cacerts" && ls *.pem | head -1)
+  cat > "$1/config.yaml" <<EOF
+NodeOUs:
+  Enable: true
+  ClientOUIdentifier:
+    Certificate: cacerts/$c
+    OrganizationalUnitIdentifier: client
+  PeerOUIdentifier:
+    Certificate: cacerts/$c
+    OrganizationalUnitIdentifier: peer
+  AdminOUIdentifier:
+    Certificate: cacerts/$c
+    OrganizationalUnitIdentifier: admin
+  OrdererOUIdentifier:
+    Certificate: cacerts/$c
+    OrganizationalUnitIdentifier: orderer
+EOF
+}
+
+# registerUser-pqc.sh sources this file for the two helpers only
+[ "${1:-}" = --functions-only ] && return 0
+
+pqc_need "$PQC_FCC" "$MKWALLET"
+[ -d "$CM" ] || pqc_die "no crypto-material/ (run scripts/generate-crypto-pqc.sh first)"
+umask 077
 
 echo "========== Government =========="
 
 echo "========== Enrolling Government CA Admin =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/government.uae.com/ca-admin
+client_cfg "$FABRIC_CA_CLIENT_HOME" "$GOV_CA_URL" "$GOV_CA_TLS"
 
-fabric-ca-client enroll \
-  -u https://admin:adminpw@ca.government.uae.com:7054 \
+"$PQC_FCC" enroll \
+  -u https://admin:adminpw@${GOV_CA_URL#https://} \
   --caname GovernmentCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
+  --tls.certfiles "$GOV_CA_TLS"
 
-echo 'NodeOUs:
-  Enable: true
-  ClientOUIdentifier:
-    Certificate: cacerts/ca.government.uae.com-7054-GovernmentCA.pem
-    OrganizationalUnitIdentifier: client
-  PeerOUIdentifier:
-    Certificate: cacerts/ca.government.uae.com-7054-GovernmentCA.pem
-    OrganizationalUnitIdentifier: peer
-  AdminOUIdentifier:
-    Certificate: cacerts/ca.government.uae.com-7054-GovernmentCA.pem
-    OrganizationalUnitIdentifier: admin
-  OrdererOUIdentifier:
-    Certificate: cacerts/ca.government.uae.com-7054-GovernmentCA.pem
-    OrganizationalUnitIdentifier: orderer' > $FABRIC_CA_CLIENT_HOME/msp/config.yaml
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/msp/tlscacerts
-cp $NETWORK_ROOT/fabric-ca/government/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/msp/tlscacerts/ca.crt
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/tlsca
-cp $NETWORK_ROOT/fabric-ca/government/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/tlsca/tlsca.government.uae.com-cert.pem
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/ca
-cp $NETWORK_ROOT/fabric-ca/government/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/ca/ca.government.uae.com-cert.pem
-
-echo "========== Registering Government peer0 =========="
-fabric-ca-client register \
-  --caname GovernmentCA \
-  --id.name peer0.government.uae.com \
-  --id.secret peer0pw \
-  --id.type peer \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
-
-echo "========== Registering Government admin =========="
-fabric-ca-client register \
-  --caname GovernmentCA \
-  --id.name org1admin \
-  --id.secret org1adminpw \
-  --id.type admin \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
-
-echo "========== Enrolling Government peer0 =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com
-
-fabric-ca-client enroll \
-  -u https://peer0.government.uae.com:peer0pw@ca.government.uae.com:7054 \
-  --caname GovernmentCA \
-  --csr.hosts peer0.government.uae.com \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/msp/config.yaml
-
-fabric-ca-client enroll \
-  -u https://peer0.government.uae.com:peer0pw@ca.government.uae.com:7054 \
-  --caname GovernmentCA \
-  --enrollment.profile tls \
-  --csr.hosts peer0.government.uae.com \
-  --csr.hosts localhost \
-  -M $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
-
-TLS=$NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls
-cp $TLS/tlscacerts/*.pem $TLS/ca.crt
-cp $TLS/signcerts/*.pem  $TLS/server.crt
-cp $TLS/keystore/*_sk   $TLS/server.key
-
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/tlsca
-cp $TLS/ca.crt \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/tlsca/tlsca.government.uae.com-cert.pem
-
-echo "========== Enrolling Government Admin User =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/users/Admin@government.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/users/Admin@government.uae.com
-
-fabric-ca-client enroll \
-  -u https://org1admin:org1adminpw@ca.government.uae.com:7054 \
-  --caname GovernmentCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/government/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/users/Admin@government.uae.com/msp/config.yaml
+nodeous "$FABRIC_CA_CLIENT_HOME/msp"
 
 echo "========== General =========="
 
 echo "========== Enrolling General CA Admin =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/general.uae.com/ca-admin
+client_cfg "$FABRIC_CA_CLIENT_HOME" "$GEN_CA_URL" "$GEN_CA_TLS"
 
-fabric-ca-client enroll \
-  -u https://admin:adminpw@ca.general.uae.com:8054 \
+"$PQC_FCC" enroll \
+  -u https://admin:adminpw@${GEN_CA_URL#https://} \
   --caname GeneralCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
+  --tls.certfiles "$GEN_CA_TLS"
 
-echo 'NodeOUs:
-  Enable: true
-  ClientOUIdentifier:
-    Certificate: cacerts/ca.general.uae.com-8054-GeneralCA.pem
-    OrganizationalUnitIdentifier: client
-  PeerOUIdentifier:
-    Certificate: cacerts/ca.general.uae.com-8054-GeneralCA.pem
-    OrganizationalUnitIdentifier: peer
-  AdminOUIdentifier:
-    Certificate: cacerts/ca.general.uae.com-8054-GeneralCA.pem
-    OrganizationalUnitIdentifier: admin
-  OrdererOUIdentifier:
-    Certificate: cacerts/ca.general.uae.com-8054-GeneralCA.pem
-    OrganizationalUnitIdentifier: orderer' > $FABRIC_CA_CLIENT_HOME/msp/config.yaml
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/msp/tlscacerts
-cp $NETWORK_ROOT/fabric-ca/general/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/msp/tlscacerts/ca.crt
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/tlsca
-cp $NETWORK_ROOT/fabric-ca/general/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/tlsca/tlsca.general.uae.com-cert.pem
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/ca
-cp $NETWORK_ROOT/fabric-ca/general/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/ca/ca.general.uae.com-cert.pem
-
-echo "========== Registering General peer0 =========="
-fabric-ca-client register \
-  --caname GeneralCA \
-  --id.name peer0.general.uae.com \
-  --id.secret peer0pw \
-  --id.type peer \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
-
-echo "========== Registering General admin =========="
-fabric-ca-client register \
-  --caname GeneralCA \
-  --id.name org2admin \
-  --id.secret org2adminpw \
-  --id.type admin \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
-
-echo "========== Enrolling General peer0 =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com
-
-fabric-ca-client enroll \
-  -u https://peer0.general.uae.com:peer0pw@ca.general.uae.com:8054 \
-  --caname GeneralCA \
-  --csr.hosts peer0.general.uae.com \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/msp/config.yaml
-
-fabric-ca-client enroll \
-  -u https://peer0.general.uae.com:peer0pw@ca.general.uae.com:8054 \
-  --caname GeneralCA \
-  --enrollment.profile tls \
-  --csr.hosts peer0.general.uae.com \
-  --csr.hosts localhost \
-  -M $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/tls \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
-
-TLS=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/peers/peer0.general.uae.com/tls
-cp $TLS/tlscacerts/*.pem $TLS/ca.crt
-cp $TLS/signcerts/*.pem  $TLS/server.crt
-cp $TLS/keystore/*_sk   $TLS/server.key
-
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/tlsca
-cp $TLS/ca.crt \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/tlsca/tlsca.general.uae.com-cert.pem
-
-echo "========== Enrolling General Admin User =========="
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/Admin@general.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/Admin@general.uae.com
-
-fabric-ca-client enroll \
-  -u https://org2admin:org2adminpw@ca.general.uae.com:8054 \
-  --caname GeneralCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/Admin@general.uae.com/msp/config.yaml
-
-echo "========== Orderer =========="
-
-echo "========== Enrolling Orderer CA Admin =========="
-mkdir -p $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com
-
-fabric-ca-client enroll \
-  -u https://admin:adminpw@ca.orderer.example.com:9054 \
-  --caname OrdererCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-echo 'NodeOUs:
-  Enable: true
-  ClientOUIdentifier:
-    Certificate: cacerts/ca.orderer.example.com-9054-OrdererCA.pem
-    OrganizationalUnitIdentifier: client
-  PeerOUIdentifier:
-    Certificate: cacerts/ca.orderer.example.com-9054-OrdererCA.pem
-    OrganizationalUnitIdentifier: peer
-  AdminOUIdentifier:
-    Certificate: cacerts/ca.orderer.example.com-9054-OrdererCA.pem
-    OrganizationalUnitIdentifier: admin
-  OrdererOUIdentifier:
-    Certificate: cacerts/ca.orderer.example.com-9054-OrdererCA.pem
-    OrganizationalUnitIdentifier: orderer' > $FABRIC_CA_CLIENT_HOME/msp/config.yaml
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/msp/tlscacerts
-cp $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/msp/tlscacerts/tlsca.orderer.example.com-cert.pem
-
-mkdir -p $FABRIC_CA_CLIENT_HOME/tlsca
-cp $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem \
-   $FABRIC_CA_CLIENT_HOME/tlsca/tlsca.orderer.example.com-cert.pem
-
-echo "========== Registering Orderer orderer0 =========="
-fabric-ca-client register \
-  --caname OrdererCA \
-  --id.name orderer0.orderer.example.com \
-  --id.secret orderer0pw \
-  --id.type orderer \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-echo "========== Registering Orderer admin =========="
-fabric-ca-client register \
-  --caname OrdererCA \
-  --id.name ordererAdmin \
-  --id.secret ordererAdminpw \
-  --id.type admin \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-echo "========== Enrolling Orderer orderer0 =========="
-mkdir -p $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/orderers/orderer0.orderer.example.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/orderers/orderer0.orderer.example.com
-
-fabric-ca-client enroll \
-  -u https://orderer0.orderer.example.com:orderer0pw@ca.orderer.example.com:9054 \
-  --caname OrdererCA \
-  --csr.hosts orderer0.orderer.example.com \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/orderers/orderer0.orderer.example.com/msp/config.yaml
-
-fabric-ca-client enroll \
-  -u https://orderer0.orderer.example.com:orderer0pw@ca.orderer.example.com:9054 \
-  --caname OrdererCA \
-  --enrollment.profile tls \
-  --csr.hosts orderer0.orderer.example.com \
-  --csr.hosts localhost \
-  -M $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/orderers/orderer0.orderer.example.com/tls \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-TLS=$NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/orderers/orderer0.orderer.example.com/tls
-cp $TLS/tlscacerts/*.pem $TLS/ca.crt
-cp $TLS/signcerts/*.pem  $TLS/server.crt
-cp $TLS/keystore/*_sk   $TLS/server.key
-
-mkdir -p $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/tlsca
-cp $TLS/ca.crt \
-   $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/tlsca/tlsca.orderer.example.com-cert.pem
-
-echo "========== Enrolling Orderer Admin User =========="
-mkdir -p $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/users/Admin@orderer.example.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/users/Admin@orderer.example.com
-
-fabric-ca-client enroll \
-  -u https://ordererAdmin:ordererAdminpw@ca.orderer.example.com:9054 \
-  --caname OrdererCA \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/orderer/ca-cert.pem
-
-cp $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/ordererOrganizations/orderer.example.com/users/Admin@orderer.example.com/msp/config.yaml
+nodeous "$FABRIC_CA_CLIENT_HOME/msp"
 
 echo "========== Registering and Enrolling General Issuer1 User =========="
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/general.uae.com/ca-admin
 
-fabric-ca-client register \
+"$PQC_FCC" register \
   --caname GeneralCA \
   --id.name issuer1 \
   --id.secret issuer1pw \
   --id.type client \
   --id.attrs 'role=issuer:ecert' \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem || true
+  --tls.certfiles "$GEN_CA_TLS" || true
 
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/issuer1@general.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/issuer1@general.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/general.uae.com/users/issuer1@general.uae.com
+client_cfg "$FABRIC_CA_CLIENT_HOME" "$GEN_CA_URL" "$GEN_CA_TLS"
 
-fabric-ca-client enroll \
-  -u https://issuer1:issuer1pw@ca.general.uae.com:8054 \
+"$PQC_FCC" enroll \
+  -u https://issuer1:issuer1pw@${GEN_CA_URL#https://} \
   --caname GeneralCA \
   --enrollment.attrs "role" \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
+  --tls.certfiles "$GEN_CA_TLS"
 
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/issuer1@general.uae.com/msp/config.yaml
+nodeous "$FABRIC_CA_CLIENT_HOME/msp"
 
 echo "========== Registering and Enrolling General Verifier1 User =========="
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/general.uae.com/ca-admin
 
-fabric-ca-client register \
+"$PQC_FCC" register \
   --caname GeneralCA \
   --id.name verifier1 \
   --id.secret verifier1pw \
   --id.type client \
   --id.attrs 'role=verifier:ecert' \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem || true
+  --tls.certfiles "$GEN_CA_TLS" || true
 
-mkdir -p $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/verifier1@general.uae.com
-export FABRIC_CA_CLIENT_HOME=$NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/verifier1@general.uae.com
+export FABRIC_CA_CLIENT_HOME=$CM/peerOrganizations/general.uae.com/users/verifier1@general.uae.com
+client_cfg "$FABRIC_CA_CLIENT_HOME" "$GEN_CA_URL" "$GEN_CA_TLS"
 
-fabric-ca-client enroll \
-  -u https://verifier1:verifier1pw@ca.general.uae.com:8054 \
+"$PQC_FCC" enroll \
+  -u https://verifier1:verifier1pw@${GEN_CA_URL#https://} \
   --caname GeneralCA \
   --enrollment.attrs "role" \
-  --tls.certfiles $NETWORK_ROOT/fabric-ca/general/ca-cert.pem
+  --tls.certfiles "$GEN_CA_TLS"
 
-cp $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/msp/config.yaml \
-   $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/verifier1@general.uae.com/msp/config.yaml
+nodeous "$FABRIC_CA_CLIENT_HOME/msp"
 
-echo "========== Generating Fabric Gateway Wallet Identities =========="
-mkdir -p $NETWORK_ROOT/wallet/general
-mkdir -p $NETWORK_ROOT/wallet/government
+echo "========== Generating Fabric Gateway Wallet Identities (mkwallet-g1) =========="
+mkdir -p "$NETWORK_ROOT/wallet/general" "$NETWORK_ROOT/wallet/government"
 
-CERT_ISSUER=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/issuer1@general.uae.com/msp/signcerts/*.pem | sed ':a;N;$!ba;s/\n/\\n/g')
-KEY_ISSUER=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/issuer1@general.uae.com/msp/keystore/*_sk | sed ':a;N;$!ba;s/\n/\\n/g')
-
-cat > $NETWORK_ROOT/wallet/general/issuer1.id <<EOF
-{"credentials":{"certificate":"$CERT_ISSUER","privateKey":"$KEY_ISSUER"},"mspId":"GeneralMSP","type":"X.509","version":1}
-EOF
-
-CERT_VERIFIER=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/verifier1@general.uae.com/msp/signcerts/*.pem | sed ':a;N;$!ba;s/\n/\\n/g')
-KEY_VERIFIER=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/general.uae.com/users/verifier1@general.uae.com/msp/keystore/*_sk | sed ':a;N;$!ba;s/\n/\\n/g')
-
-cat > $NETWORK_ROOT/wallet/general/verifier1.id <<EOF
-{"credentials":{"certificate":"$CERT_VERIFIER","privateKey":"$KEY_VERIFIER"},"mspId":"GeneralMSP","type":"X.509","version":1}
-EOF
-
-CERT_GOV=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/users/Admin@government.uae.com/msp/signcerts/*.pem | sed ':a;N;$!ba;s/\n/\\n/g')
-KEY_GOV=$(cat $NETWORK_ROOT/crypto-material/peerOrganizations/government.uae.com/users/Admin@government.uae.com/msp/keystore/*_sk | sed ':a;N;$!ba;s/\n/\\n/g')
-
-cat > $NETWORK_ROOT/wallet/government/admin.id <<EOF
-{"credentials":{"certificate":"$CERT_GOV","privateKey":"$KEY_GOV"},"mspId":"GovernmentMSP","type":"X.509","version":1}
-EOF
+"$MKWALLET" "$CM/peerOrganizations/general.uae.com/users/issuer1@general.uae.com/msp" GeneralMSP "$NETWORK_ROOT/wallet/general/issuer1.id"
+"$MKWALLET" "$CM/peerOrganizations/general.uae.com/users/verifier1@general.uae.com/msp" GeneralMSP "$NETWORK_ROOT/wallet/general/verifier1.id"
+"$MKWALLET" "$CM/peerOrganizations/government.uae.com/users/Admin@government.uae.com/msp" GovernmentMSP "$NETWORK_ROOT/wallet/government/admin.id"
 
 echo "Enrollment complete. crypto-material/ and wallet/ are ready."

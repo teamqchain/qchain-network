@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+# PQC copy (qchain-network-pqc, 2026-10-31). Change vs qchain-network (see CHANGES-PQC.md):
+#   General.BCCSP.Default PQC + PQC.KeyStorePath (the orderer mounts its priv_sk copy there).
+#   Listen/admin/operations addresses, TLS and MSP paths are set by env in docker/docker-compose.yaml.
 
 ---
 ################################################################################
@@ -151,9 +154,14 @@ General:
     # Valid providers are:
     #  - SW: a software based crypto provider
     #  - PKCS11: a CA hardware security module crypto provider.
-    Default: SW
+    #  - PQC: ML-DSA-44 provider of the fabric-lib-go bccsp-pqc fork (-tags pqc builds)
+    Default: PQC
 
-    # SW configures the software based blockchain crypto provider.
+    # PQC copy: key store with a copy of the orderer's priv_sk (never written by the orderer).
+    PQC:
+      KeyStorePath: /var/hyperledger/orderer/pqc-keystore
+
+    # SW configures the software based blockchain crypto provider (unused: Default is PQC).
     SW:
       # TODO: The default Hash and Security level needs refactoring to be
       # fully configurable. Changing these defaults requires coordination

@@ -1,16 +1,26 @@
+# PQC copy (qchain-network-pqc, 2026-10-31): ML-DSA-44 CA per ~/fabric-ca/docs/source/pqc-mldsa.md.
+# Changes vs qchain-network (see CHANGES-PQC.md):
+#   - bccsp.default PQC (upper case; lower case is refused), no bccsp.pqc.password (refused).
+#   - ca.certfile/keyfile = the cryptogen GovernmentMSP CA cert/key (design b1, D7 shortcut), copied into
+#     cafiles/ by scripts/generate-crypto-pqc.sh at run time; CA-issued users chain to the channel MSP root.
+#   - server TLS from EXTERNAL ECDSA P-256 files tls/tls-cert.pem + tls/tls-key.pem (a PQC CA refuses TLS
+#     without a key file); clients trust tls/tls-cert.pem via --tls.certfiles.
+#   - csr.keyrequest.algo mldsa44; signing.default usage [digital signature]; the source's "tls" profile
+#     (key encipherment / key agreement) removed: unused in b1 and unfit for ML-DSA.
+#   - port 27054. Registry, db and affiliations unchanged.
 version: 1.2.0
-port: 7054
+port: 27054
 debug: false
 
 tls:
   enabled: true
-  certfile:
-  keyfile:
+  certfile: tls/tls-cert.pem
+  keyfile: tls/tls-key.pem
 
 ca:
   name: GovernmentCA
-  keyfile:
-  certfile:
+  certfile: cafiles/ca.government.uae.com-cert.pem
+  keyfile: cafiles/priv_sk
   chainfile:
 
 registry:
@@ -35,6 +45,8 @@ db:
 
 csr:
   cn: ca.government.uae.com
+  keyrequest:
+    algo: mldsa44
   names:
     - C: AE
       ST: Sharjah
@@ -44,9 +56,6 @@ csr:
   hosts:
     - localhost
     - ca.government.uae.com
-  ca:
-    expiry: 131400h
-    pathlength: 1
 
 signing:
   default:
@@ -60,17 +69,11 @@ signing:
       caconstraint:
         isca: true
         maxpathlen: 0
-    tls:
-      usage: [signing, key encipherment, server auth, client auth, key agreement]
-      expiry: 8760h
 
 bccsp:
-  default: SW
-  sw:
-    hash: SHA2
-    security: 256
-    filekeystore:
-      keystore: msp/keystore
+  default: PQC
+  pqc:
+    keystorepath: msp/keystore
 
 affiliations:
   government:

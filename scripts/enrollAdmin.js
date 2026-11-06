@@ -1,3 +1,7 @@
+// PQC copy (qchain-network-pqc, 2026-10-31): NOT USABLE WITH ML-DSA. Kept unchanged for reference only.
+// The Node fabric-ca-client SDK generates ECDSA P-256 keys client-side and cannot enroll ML-DSA-44
+// identities. Use scripts/registerEnroll.sh (CA admins, issuer1/verifier1, wallets) and
+// scripts/registerUser-pqc.sh instead (PQC fabric-ca-client + mkwallet-g1). See CHANGES-PQC.md.
 'use strict';
 
 const { Wallets } = require(`fabric-network`);

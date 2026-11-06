@@ -19,9 +19,9 @@
   },
   "peers": {
     "peer0.government.uae.com": {
-      "url": "grpcs://peer0.government.uae.com:7051",
+      "url": "grpcs://peer0.government.uae.com:27051",
       "tlsCACerts": {
-        "path": "../qchain-network/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls/ca.crt"
+        "path": "../qchain-network-pqc/crypto-material/peerOrganizations/government.uae.com/peers/peer0.government.uae.com/tls/ca.crt"
       },
       "grpcOptions": {
         "ssl-target-name-override": "peer0.government.uae.com",
@@ -31,10 +31,10 @@
   },
   "certificateAuthorities": {
     "ca.government.uae.com": {
-      "url": "https://ca.government.uae.com:7054",
+      "url": "https://localhost:27054",
       "caName": "GovernmentCA",
       "tlsCACerts": {
-        "pem": "-----BEGIN CERTIFICATE-----\n<paste contents of crypto-material/peerOrganizations/government.uae.com/ca/ca.government.uae.com-cert.pem here>\n-----END CERTIFICATE-----"
+        "pem": "-----BEGIN CERTIFICATE-----\n<paste contents of fabric-ca/government/tls/tls-cert.pem here (the CA's ECDSA server TLS cert, not ca-cert.pem)>\n-----END CERTIFICATE-----"
       },
       "httpOptions": {
         "verify": false

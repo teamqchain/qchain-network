@@ -66,3 +66,16 @@ docker-compose.*.yaml
 fabric-ca/*/IssuerPublicKey
 fabric-ca/*/IssuerRevocationPublicKey
 fabric-ca/*/fabric-ca-server.db
+
+# PQC copy (qchain-network-pqc, 2026-10-31): runtime material written by the PQC scripts
+crypto-material/
+pqc-keystore/
+*.id
+*_sk
+fabric-ca/*/cafiles/
+fabric-ca/*/tls/
+fabric-ca/*/msp/
+fabric-ca/*/ca-cert.pem
+fabric-ca/*/ca-chain.pem
+chaincode-pkg/
+teardown-pqc.log
