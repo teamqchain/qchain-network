@@ -1,8 +1,31 @@
 # qchain-network
 
-QChain's Hyperledger Fabric network. Every Fabric identity uses ML-DSA-44: the orderer, the peers, the admins and the application users. Peer-to-peer and orderer TLS certificates are ML-DSA-44 as well.
+QChain's Hyperledger Fabric network, with a post-quantum Membership Service Provider (MSP). Every Fabric identity uses ML-DSA-44: the orderer, the peers, the admins and the application users. Peer-to-peer and orderer TLS certificates are ML-DSA-44 as well. It is pure post-quantum, not hybrid: no ECDSA key sits alongside these identities.
 
 This network has been live since 7 November 2026, when it replaced the classical (ECDSA) network. The classical version stays in the git history under the tag `classical-network-final`. [CHANGES-PQC.md](CHANGES-PQC.md) lists every difference and the reason for it.
+
+## How the post-quantum MSP works
+
+- **Crypto provider:** `config/core.yaml` and `config/orderer.yaml` set the BCCSP to `Default: PQC`, the ML-DSA-44 provider in the PQC builds of Fabric. Each node reads its key from a `pqc-keystore` folder.
+- **Nodes and admins:** `cryptogen` generates ML-DSA-44 keys and certificates, including TLS, from `config/crypto-config.yaml` (`PublicKeyAlgorithm: mldsa44`).
+- **Application users:** each organisation's Fabric CA issues ML-DSA-44 certificates. It uses the `cryptogen` organisation CA certificate and key, so its users chain to the channel's MSP root. `issuer1` and `verifier1` carry a `role` attribute in their certificates, which the chaincode checks.
+- **Channel:** capability `V3_0`, which ML-DSA identities need.
+- **Wallets:** `mkwallet-g1` (`offchain/cmd/mkwallet`) writes each `.id` file with the certificate and the PKCS#8 ML-DSA-44 private key.
+- **Backend:** `newSign` in `offchain/fabric.go` signs Fabric Gateway transactions with Go 1.27's `crypto/mldsa`.
+- **Chaincode:** the same JavaScript code as before, now run as a service, because the peers no longer build chaincode through Docker.
+
+## Verified on the live network (7 November 2026)
+
+- All 58 certificates in `crypto-material` carry the ML-DSA-44 OID `2.16.840.1.101.3.4.3.17`, and so do the certificates of `issuer1`, both peers and the orderer in the newest block.
+- `tests/e2e_api_test.sh` passes 123/123. The chain, MySQL and IPFS match record by record.
+- The issuer signature stored on the chain is 2420 bytes, the size of an ML-DSA-44 signature.
+- After a Docker restart, all containers come back with their data intact.
+
+To check the identities yourself, run this from the repository root. Older OpenSSL prints the OID, newer versions print ML-DSA-44, and nothing else should appear:
+
+```bash
+find qchain-network/crypto-material -path '*/signcerts/*.pem' -exec openssl x509 -in {} -noout -text \; | grep 'Public Key Algorithm' | sort | uniq -c
+```
 
 ## How it differs from the classical network
 
@@ -36,7 +59,7 @@ This network has been live since 7 November 2026, when it replaced the classical
 ## Prerequisites
 
 1. **Docker with Compose.** The scripts only touch objects named `qchainpqc_*`. Don't use `docker system prune`, `docker volume prune` or `--remove-orphans` on this project.
-2. **The five `qchain-pqc/*` images**, loaded locally (`docker images 'qchain-pqc/*'`). They are built from the team's Fabric (`e472b4ea`) and Fabric CA (`e82caf43`) forks, which are not in this repository. Stock `hyperledger/*` images can't run ML-DSA identities. `qchain-pqc/ccaas-qchain:2.0` contains the code in `chaincode/`.
+2. **The five `qchain-pqc/*` images**, loaded locally (`docker images 'qchain-pqc/*'`). They are built for x86_64 from the team's Fabric (`e472b4ea`) and Fabric CA (`e82caf43`) forks, which are not in this repository. Stock `hyperledger/*` images can't run ML-DSA identities. `qchain-pqc/ccaas-qchain:2.0` contains the code in `chaincode/`.
 3. **The CLI wrappers**, once per machine:
    ```bash
    bash qchain-network/scripts/qchain-pqc-cli.sh install ~/pqc-tools/bin
@@ -129,6 +152,7 @@ These are generated on the machine and ignored by git. They hold private keys, s
 
 - **ML-DSA-44 only.** No other ML-DSA levels.
 - **The CA server TLS is classical** (ECDSA P-256 certificate). With OpenSSL 3.5 clients, TLS 1.3 negotiated the hybrid X25519MLKEM768 key exchange; the certificate signature remains ECDSA.
+- **Peer and orderer TLS:** the certificates are ML-DSA-44, but the key exchange has not been checked.
 - **Each CA reuses the `cryptogen` organisation CA key**, so that key exists both in `crypto-material/` and in `fabric-ca/<org>/cafiles/`. A pure Fabric CA flow with fresh CA roots has not been tried.
 - **Remaining ECDSA paths in Fabric** (not used here): tlsgen, the discover CLI, SmartBFT/cluster.
 - **Certificates carry `cryptogen`'s default location** (US, California, San Francisco).
