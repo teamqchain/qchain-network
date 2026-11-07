@@ -106,16 +106,16 @@ Then clear the chain-linked MySQL tables and all IPFS pins, and only then run `d
 
 ## Backend settings
 
-`offchain/docker-run.sh` mounts this folder read-only at `/qchain-network`. The backend reads `crypto-material/peerOrganizations/<org>/peers/<peer>/tls/ca.crt` and `wallet/<org>/<id>.id` from it. `offchain/.env` needs:
+`offchain/docker-run.sh` mounts this folder read-only at `/qchain-network`. The backend reads `crypto-material/peerOrganizations/<org>/peers/<peer>/tls/ca.crt` and `wallet/<org>/<id>.id` from it. The backend's defaults match this network, so `offchain/.env` only needs these if they change:
 
 ```
 GOV_PEER_ENDPOINT=peer0.government.uae.com:27051
 GEN_PEER_ENDPOINT=peer0.general.uae.com:29051
 ISSUER_IDENTITY=issuer1
 VERIFIER_IDENTITY=verifier1
+CHANNEL_NAME=mychannel
+CHAINCODE_NAME=qchaincode
 ```
-
-`CHANNEL_NAME=mychannel` and `CHAINCODE_NAME=qchaincode` are the backend's defaults.
 
 ## Runtime files
 

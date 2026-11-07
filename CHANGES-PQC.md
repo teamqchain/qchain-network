@@ -80,5 +80,6 @@ Design decisions in force:
 | `scripts/qchain-pqc-cli.sh` | `NETWORK_ROOT` defaults to the folder the script is in; marked executable | the symlinks point at this script |
 | `connection/*.example.json` | tlsCACerts path back to `../qchain-network/` | folder name |
 | `offchain/docker-run.sh` | `NETWORK_DIR` defaults to `$REPO_ROOT/qchain-network` | folder name |
+| `offchain/config.go`, `scripts/schema.sql`, `scripts/setup-demo.sh` | default peer ports 7051 / 9051 → 27051 / 29051 | port map; a fresh setup needs no endpoint overrides |
 | `README-PQC.md` | rewritten as `README.md` | it described a laptop run with nothing started yet |
 | header comments in scripts and YAML files | "PQC copy" → "PQC network" | there is no separate copy any more |
