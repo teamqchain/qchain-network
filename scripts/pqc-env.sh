@@ -6,7 +6,7 @@
 #
 # PREREQUISITE (once per machine): install the tool wrappers, which run each CLI from the
 # qchain-pqc/tools image, so the host needs no Fabric binaries:
-#   bash qchain-network/scripts/qchain-pqc-cli.sh install ~/pqc-tools/bin
+#   bash scripts/qchain-pqc-cli.sh install ~/pqc-tools/bin
 
 _PQC_SCRIPTS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export NETWORK_ROOT="${NETWORK_ROOT:-$(cd "$_PQC_SCRIPTS/.." && pwd)}"
@@ -18,7 +18,7 @@ export PQC_OSNADMIN="${PQC_OSNADMIN:-$PQC_BIN/osnadmin}"
 export PQC_FCC="${PQC_FCC:-$PQC_BIN/fabric-ca-client}"
 export PQC_CRYPTOGEN="${PQC_CRYPTOGEN:-$PQC_BIN/cryptogen}"
 export PQC_CONFIGTXGEN="${PQC_CONFIGTXGEN:-$PQC_BIN/configtxgen}"
-export MKWALLET="${MKWALLET:-$PQC_BIN/mkwallet-g1}"   # offchain/cmd/mkwallet
+export MKWALLET="${MKWALLET:-$PQC_BIN/mkwallet-g1}"   # built from cmd/mkwallet in qchain-backend
 export OPENSSL="${OPENSSL:-/usr/bin/openssl}"       # ECDSA CA server TLS certs, random user secrets
 export DOCKER="${DOCKER:-/usr/bin/docker}"
 

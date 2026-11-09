@@ -79,3 +79,6 @@ fabric-ca/*/ca-cert.pem
 fabric-ca/*/ca-chain.pem
 chaincode-pkg/
 teardown-pqc.log
+# Real connection profiles (environment-specific; the *.example.json files are committed)
+connection/connection-gen.json
+connection/connection-gov.json

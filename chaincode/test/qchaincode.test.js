@@ -3,7 +3,7 @@
 // Unit tests for QChaincode v2 against an in-memory ledger. Uses only Node's
 // built-in test runner, so no extra dependencies are needed:
 //
-//   cd qchain-network/chaincode && npm install && npm test
+//   cd chaincode && npm install && node --test
 
 const test = require('node:test');
 const assert = require('node:assert/strict');

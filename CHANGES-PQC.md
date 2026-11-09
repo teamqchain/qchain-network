@@ -3,6 +3,8 @@
 The differences between the classical network (tag `classical-network-final`) and the PQC network.
 
 > **History note.** This file was written on 2026-10-31, when the PQC network was a separate copy in a folder named `qchain-network-pqc`, next to the original `qchain-network`. "This PQC copy", "the source" and the home-folder paths below describe that time. On 2026-11-07 the copy replaced this folder; [the last section](#changes-when-it-replaced-this-folder-2026-11-07) lists what changed then.
+>
+> **Second history note (2026-11-09).** This file was written in the former `QChain-PQC-blockchain` monorepo, where this folder was `qchain-network/`. Paths there such as `offchain/...` now live in the [qchain-backend](https://github.com/teamqchain/qchain-backend) repository (`offchain/config.go` → `config/config.go`, `offchain/fabric.go` → `ledger/fabric.go`, `offchain/docker-run.sh` → `docker/docker-run.sh`), and `scripts/schema.sql`, `setup-demo.sh`, `start-demo.sh`, `setup-ipfs-service.sh` and `setup-tailscale-funnel.sh` moved there too.
 
 The approved plan is in `~/qchain-network-pqc.PLAN.md`. Every edited script and YAML file also carries a short header comment. JSON files can't hold comments, so their changes are listed only here.
 

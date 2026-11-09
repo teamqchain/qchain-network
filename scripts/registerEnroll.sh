@@ -12,7 +12,7 @@
 #     channel MSP written by cryptogen and must not be touched).
 #   - issuer1 / verifier1 at GeneralCA: same registration (role=issuer:ecert / role=verifier:ecert,
 #     --enrollment.attrs role) and enrollment as the source.
-#   - Wallets built with mkwallet-g1 (offchain/cmd/mkwallet: picks the key that matches the cert), not with sed.
+#   - Wallets built with mkwallet-g1 (cmd/mkwallet in qchain-backend: picks the key that matches the cert), not with sed.
 # Run after scripts/generate-crypto-pqc.sh and scripts/start-fabric-network.sh (CAs up).
 set -e
 
