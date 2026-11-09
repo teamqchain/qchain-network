@@ -327,6 +327,14 @@ keys. Moving this network there needs:
 
 ---
 
+## Documentation
+
+- [CHANGES-PQC.md](CHANGES-PQC.md): every change from the classical network, with the reason
+- [Setup guide](https://github.com/teamqchain/qchain-docs/blob/main/docs/setup.md): the whole system from scratch, including this network (section 6)
+- [qchain-backend](https://github.com/teamqchain/qchain-backend): the API that reads this network's wallets and certificates, and the database schema
+
+---
+
 ## Related repositories
 
 | Repository | What it holds |
